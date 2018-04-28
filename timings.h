@@ -7,4 +7,7 @@
 #define MOISTURE_DELAY 0
 #define MOISTURE_PERIOD 50
 
+#define LIGHT_DELAY 1
+#define LIGHT_PERIOD 50
+
 #endif

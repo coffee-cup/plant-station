@@ -17,6 +17,7 @@ LiquidCrystal lcd(12, 11, 10, 5, 4, 3, 2);
 int backLight = 8;
 
 uint8_t moisture_value = 0;
+uint8_t light_value = 0;
 
 char row_buf[16];
 void updateLcd() {
@@ -24,14 +25,23 @@ void updateLcd() {
 
     // First row
     lcd.setCursor(0, 0);
-    sprintf(row_buf, "Moisture: %d %", moisture_value);
+    sprintf(row_buf, "Moisture : %d", moisture_value);
+    lcd.print(row_buf);
+
+    // Second row
+    lcd.setCursor(0, 1);
+    sprintf(row_buf, "Light    : %d", light_value);
     lcd.print(row_buf);
 }
 
 void updateMoisture() {
     uint16_t value = analogRead(A0);
-    Serial.println(value);
     moisture_value = constrain(map(value, MAX_MOISTURE, 1020, 100, 0), 0, 100);
+}
+
+void updateLight() {
+    uint16_t value = analogRead(A1);
+    light_value = constrain(map(value, 0, 1023, 0, 100), 0, 100);
 }
 
 void idle(uint32_t idle_period) {
@@ -52,6 +62,7 @@ void setup() {
     SchedulerInit();
     SchedulerStartTask(UPDATE_LCD_DELAY, UPDATE_LCD_PERIOD, updateLcd);
     SchedulerStartTask(MOISTURE_DELAY, MOISTURE_PERIOD, updateMoisture);
+    SchedulerStartTask(LIGHT_DELAY, LIGHT_PERIOD, updateLight);
 }
 
 void loop() {
