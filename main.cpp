@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <LiquidCrystal.h>
 
+#define MAX_MOISTURE (400)
+
 extern HardwareSerial Serial;
 
 // Connections:
@@ -14,17 +16,22 @@ extern HardwareSerial Serial;
 LiquidCrystal lcd(12, 11, 10, 5, 4, 3, 2);
 int backLight = 8;
 
+uint8_t moisture_value = 0;
+
 char row_buf[16];
 void updateLcd() {
-    int time = millis() / 1000;
     lcd.clear();
 
     // First row
     lcd.setCursor(0, 0);
-    sprintf(row_buf, "%d ms", time);
+    sprintf(row_buf, "Moisture: %d %", moisture_value);
     lcd.print(row_buf);
+}
 
-    Serial.print("yes\n");
+void updateMoisture() {
+    uint16_t value = analogRead(A0);
+    Serial.println(value);
+    moisture_value = constrain(map(value, MAX_MOISTURE, 1020, 100, 0), 0, 100);
 }
 
 void idle(uint32_t idle_period) {
@@ -37,13 +44,14 @@ void setup() {
 
     lcd.begin(16, 2);
     lcd.clear();
-    lcd.print("hello world");
+    lcd.print("it is time.");
 
-    Serial.begin(9600);
+    Serial.begin(19200);
 
     // Scheduler setup
     SchedulerInit();
     SchedulerStartTask(UPDATE_LCD_DELAY, UPDATE_LCD_PERIOD, updateLcd);
+    SchedulerStartTask(MOISTURE_DELAY, MOISTURE_PERIOD, updateMoisture);
 }
 
 void loop() {
