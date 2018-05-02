@@ -10,6 +10,10 @@
 #define WIFI_SSID ("Corner G & The Rub")
 #define WIFI_PASSWORD ("sexyfishtalk")
 
+#define PLANTS_HOST ("192.168.0.14")
+#define PLANTS_PORT (4000)
+#define PLANTS_PATH ("/sensor/plants")
+
 SoftwareSerial ESPserial(2, 3); // RX | TX
 Wifi wifi(&ESPserial, &Serial, -1);
 
@@ -52,6 +56,20 @@ void updateLight() {
     light_value = constrain(map(value, 0, 1023, 0, 100), 0, 100);
 }
 
+String createJson() {
+    // {"m": 1, "l": 1}
+    String data = "{\"m\":";
+    data += moisture_value;
+    data += ",\"l\":";
+    data += light_value;
+    data += "}";
+    return data;
+}
+
+void sendData() {
+    wifi.postRequest(PLANTS_HOST, PLANTS_PATH, createJson(), PLANTS_PORT);
+}
+
 void idle(uint32_t idle_period) { delay(idle_period); }
 
 void setup() {
@@ -76,9 +94,9 @@ void setup() {
     wifi.connectToAP(WIFI_SSID, WIFI_PASSWORD);
 
     delay(100);
-    wifi.getRequest("www.example.com", "/");
+    // wifi.getRequest("www.example.com", "/");
+    sendData();
     delay(1000);
-    wifi.readLine();
 
     // Scheduler setup
     SchedulerInit();

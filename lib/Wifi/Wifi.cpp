@@ -36,10 +36,7 @@ boolean Wifi::connectToAP(String ssid, String pass) {
 }
 
 boolean Wifi::connectTCP(String host, int port) {
-    String command = "AT+CIPSTART=\"TCP\",\""
-        + host
-        + "\","
-        + String(port);
+    String command = "AT+CIPSTART=\"TCP\",\"" + host + "\"," + String(port);
     writeData(command);
     find();
 }
@@ -52,9 +49,34 @@ boolean Wifi::getRequest(String host, String path, int port) {
 
     String promptString = "> ";
     if (find(&promptString)) {
-        String request = "GET " + path + " HTTP/1.1\r\n"
-            + "Host: " + host + "\r\n"
-            + "Connection: close\r\n\r\n";
+        String request = "GET " + path + " HTTP/1.1\r\n"; // 15
+        request += "Host: " + host + "\r\n";              // 8
+        request += "Connection: close\r\n\r\n";           // 21
+        writeData(request);
+
+        String sendOk = "SEND OK\r\n";
+        return find(&sendOk);
+    }
+    return false;
+}
+
+boolean Wifi::postRequest(String host, String path, String body, int port) {
+    connectTCP(host, port);
+
+    int bodyLength = body.length();
+    int dataLength = host.length() + path.length() + bodyLength +
+                     String(bodyLength).length() + HTTP_POST_LENGTH;
+    writeData("AT+CIPSEND=" + String(dataLength));
+
+    String promptString = "> ";
+    if (find(&promptString)) {
+        String request = "POST " + path + " HTTP/1.1\r\n";               // 16
+        request += "Host: " + host + "\r\n";                             // 8
+        request += "Connection: close\r\n";                              // 21
+        request += "Content-Type: application/json\r\n";                 // 32
+        request += "Content-Length: " + String(bodyLength) + "\r\n\r\n"; // 20
+        request += body;
+
         writeData(request);
 
         String sendOk = "SEND OK\r\n";
@@ -80,8 +102,6 @@ void Wifi::setMode(uint8_t mode) {
 }
 
 void Wifi::writeData(String str) {
-    clearBuffer();
-
     stream->println(str);
     if (debug) {
         debug->println("--> " + str);

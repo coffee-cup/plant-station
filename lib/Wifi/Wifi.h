@@ -11,6 +11,7 @@
 #define WIFI_TCP_ENABLE 0x01
 
 #define HTTP_GET_LENGTH (44)
+#define HTTP_POST_LENGTH (97)
 
 class Wifi {
   public:
@@ -22,14 +23,19 @@ class Wifi {
     boolean softReset();
     boolean find(String *str = NULL);
 
+    // AP
     boolean connectToAP(String ssid, String pass);
+    void closeAP();
+
+    // TCP
     boolean connectTCP(String host, int port);
+    void closeTCP();
+
+    // HTTP
     boolean getRequest(String host, String path, int port = 80);
+    boolean postRequest(String host, String path, String body, int port = 80);
 
     String readLine();
-
-    void closeAP();
-    void closeTCP();
 
   private:
     void clearBuffer();
