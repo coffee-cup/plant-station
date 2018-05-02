@@ -47,7 +47,6 @@ class Wifi {
     Stream *stream; // -> ESP8266, e.g. SoftwareSerial or Serial1
     Stream *debug;  // -> host, e.g. Serial
 
-    boolean tcpConnected;
     int8_t pinReset;
 
     String bootMarker;

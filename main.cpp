@@ -5,7 +5,8 @@
 // #include <LiquidCrystal.h>
 #include <SoftwareSerial.h>
 
-#define MAX_MOISTURE (400)
+#define MOISTURE_WATER (160)
+#define MOISTURE_AIR (697)
 
 #define WIFI_SSID ("Corner G & The Rub")
 #define WIFI_PASSWORD ("sexyfishtalk")
@@ -48,7 +49,7 @@ char row_buf[16];
 
 void updateMoisture() {
     uint16_t value = analogRead(A0);
-    moisture_value = constrain(map(value, MAX_MOISTURE, 1020, 100, 0), 0, 100);
+    moisture_value = constrain(map(value, MOISTURE_WATER, MOISTURE_AIR, 100, 0), 0, 100);
 }
 
 void updateLight() {
@@ -90,19 +91,15 @@ void setup() {
     ESPserial.begin(9600);
 
     wifi.begin();
-    delay(100);
+    delay(10);
     wifi.connectToAP(WIFI_SSID, WIFI_PASSWORD);
-
-    delay(100);
-    // wifi.getRequest("www.example.com", "/");
-    sendData();
-    delay(1000);
 
     // Scheduler setup
     SchedulerInit();
     // SchedulerStartTask(UPDATE_LCD_DELAY, UPDATE_LCD_PERIOD, updateLcd);
-    // SchedulerStartTask(MOISTURE_DELAY, MOISTURE_PERIOD, updateMoisture);
-    // SchedulerStartTask(LIGHT_DELAY, LIGHT_PERIOD, updateLight);
+    SchedulerStartTask(MOISTURE_DELAY, MOISTURE_PERIOD, updateMoisture);
+    SchedulerStartTask(LIGHT_DELAY, LIGHT_PERIOD, updateLight);
+    SchedulerStartTask(DATA_DELAY, DATA_PERIOD, sendData);
 }
 
 void loop() {

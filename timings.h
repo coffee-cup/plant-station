@@ -10,4 +10,7 @@
 #define LIGHT_DELAY 1
 #define LIGHT_PERIOD 50
 
+#define DATA_DELAY 10
+#define DATA_PERIOD 5000
+
 #endif

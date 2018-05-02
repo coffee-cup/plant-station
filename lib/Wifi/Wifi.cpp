@@ -2,15 +2,15 @@
 
 // Constructor
 Wifi::Wifi(Stream *s, Stream *d, int8_t r)
-    : stream(s), debug(d), pinReset(r), tcpConnected(false),
+    : stream(s), debug(d), pinReset(r),
       bootMarker("ready\r\n"){};
 
-boolean Wifi::begin() { test(); }
+boolean Wifi::begin() { return test(); }
 
 boolean Wifi::test() {
     clearBuffer();
     writeData("AT");
-    find(NULL);
+    return find(NULL);
 }
 
 boolean Wifi::hardReset() {
@@ -32,13 +32,13 @@ boolean Wifi::softReset() {
 boolean Wifi::connectToAP(String ssid, String pass) {
     setMode(WIFI_MODE_STATION);
     writeData("AT+CWJAP=\"" + ssid + "\",\"" + pass + "\"");
-    find(NULL);
+    return find(NULL);
 }
 
 boolean Wifi::connectTCP(String host, int port) {
     String command = "AT+CIPSTART=\"TCP\",\"" + host + "\"," + String(port);
     writeData(command);
-    find();
+    return find();
 }
 
 boolean Wifi::getRequest(String host, String path, int port) {
@@ -61,6 +61,9 @@ boolean Wifi::getRequest(String host, String path, int port) {
 }
 
 boolean Wifi::postRequest(String host, String path, String body, int port) {
+    clearBuffer();
+    flush();
+
     connectTCP(host, port);
 
     int bodyLength = body.length();
