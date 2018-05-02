@@ -5,9 +5,7 @@ Wifi::Wifi(Stream *s, Stream *d, int8_t r)
     : stream(s), debug(d), pinReset(r), tcpConnected(false),
       bootMarker("ready\r\n"){};
 
-boolean Wifi::begin() {
-    test();
-}
+boolean Wifi::begin() { test(); }
 
 boolean Wifi::test() {
     clearBuffer();
@@ -37,17 +35,48 @@ boolean Wifi::connectToAP(String ssid, String pass) {
     find(NULL);
 }
 
-boolean Wifi::connectTCP(String host, int port) {}
-boolean Wifi::requestURL(String url) {}
+boolean Wifi::connectTCP(String host, int port) {
+    String command = "AT+CIPSTART=\"TCP\",\""
+        + host
+        + "\","
+        + String(port);
+    writeData(command);
+    find();
+}
 
-int Wifi::readLine(String *url) {}
-void Wifi::closeAP() {}
-void Wifi::closeTCP() {}
+boolean Wifi::getRequest(String host, String path, int port) {
+    connectTCP(host, port);
+
+    int dataLength = host.length() + path.length() + HTTP_GET_LENGTH;
+    writeData("AT+CIPSEND=" + String(dataLength));
+
+    String promptString = "> ";
+    if (find(&promptString)) {
+        String request = "GET " + path + " HTTP/1.1\r\n"
+            + "Host: " + host + "\r\n"
+            + "Connection: close\r\n\r\n";
+        writeData(request);
+
+        String sendOk = "SEND OK\r\n";
+        return find(&sendOk);
+    }
+    return false;
+}
+
+void Wifi::closeAP() {
+    flush();
+    find();
+}
+
+void Wifi::closeTCP() {
+    stream->println("AT+CIPCLOSE");
+    find();
+}
 
 void Wifi::setMode(uint8_t mode) {
     clearBuffer();
     writeData("AT+CWMODE=" + String(mode));
-    find(NULL);
+    find();
 }
 
 void Wifi::writeData(String str) {
@@ -60,7 +89,7 @@ void Wifi::writeData(String str) {
     flush();
 }
 
-String Wifi::readData() {
+String Wifi::readLine() {
     String data = "";
     while (stream->available()) {
         char r = stream->read();
@@ -72,7 +101,7 @@ String Wifi::readData() {
             data += r;
         }
     }
-    if (debug) {
+    if (debug && data.length() > 0) {
         debug->println("<-- " + data);
     }
     return data;
@@ -114,7 +143,7 @@ boolean Wifi::find(String *str) {
 
 void Wifi::clearBuffer() {
     while (stream->available()) {
-        readData();
+        readLine();
     }
 }
 

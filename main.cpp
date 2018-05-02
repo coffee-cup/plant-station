@@ -66,13 +66,19 @@ void setup() {
     ESPserial.begin(115200);
 
     // Force baud rate to 9600 because that is all software serial can handle
-    ESPserial.println("AT+IPR=9600");
+    ESPserial.println("AT+UART=9600,8,1,0,0");
     delay(1000);
     ESPserial.end();
     ESPserial.begin(9600);
 
     wifi.begin();
+    delay(100);
     wifi.connectToAP(WIFI_SSID, WIFI_PASSWORD);
+
+    delay(100);
+    wifi.getRequest("www.example.com", "/");
+    delay(1000);
+    wifi.readLine();
 
     // Scheduler setup
     SchedulerInit();

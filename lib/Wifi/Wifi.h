@@ -10,6 +10,8 @@
 #define WIFI_TCP_DISABLE 0x00
 #define WIFI_TCP_ENABLE 0x01
 
+#define HTTP_GET_LENGTH (44)
+
 class Wifi {
   public:
     Wifi(Stream *s = &Serial, Stream *d = NULL, int8_t r = -1);
@@ -18,13 +20,13 @@ class Wifi {
     boolean test();
     boolean hardReset();
     boolean softReset();
-    boolean find(String *str);
+    boolean find(String *str = NULL);
 
     boolean connectToAP(String ssid, String pass);
     boolean connectTCP(String host, int port);
-    boolean requestURL(String url);
+    boolean getRequest(String host, String path, int port = 80);
 
-    int readLine(String *url);
+    String readLine();
 
     void closeAP();
     void closeTCP();
@@ -35,7 +37,6 @@ class Wifi {
 
     void setMode(uint8_t mode);
     void writeData(String str);
-    String readData();
 
     Stream *stream; // -> ESP8266, e.g. SoftwareSerial or Serial1
     Stream *debug;  // -> host, e.g. Serial
