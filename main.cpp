@@ -93,7 +93,7 @@ String createJson() {
 }
 
 void sendData() {
-    wifi.postRequest(PLANTS_HOST, PLANTS_PATH, createJson(), PLANTS_PORT, 4000);
+    wifi.postRequest(PLANTS_HOST, PLANTS_PATH, createJson(), PLANTS_PORT, 5000);
 }
 
 void idle(uint32_t idle_period) { delay(idle_period); }

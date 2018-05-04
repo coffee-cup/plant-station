@@ -41,7 +41,12 @@ boolean Wifi::connectTCP(String host, int port) {
 }
 
 boolean Wifi::getRequest(String host, String path, int port, int timeout) {
-    connectTCP(host, port);
+    clearBuffer();
+    flush();
+
+    if (!connectTCP(host, port)) {
+        return false;
+    }
 
     int dataLength = host.length() + path.length() + HTTP_GET_LENGTH;
     writeData("AT+CIPSEND=" + String(dataLength));
@@ -64,7 +69,9 @@ boolean Wifi::postRequest(String host, String path, String body, int port,
     clearBuffer();
     flush();
 
-    connectTCP(host, port);
+    if (!connectTCP(host, port)) {
+        return false;
+    }
 
     int bodyLength = body.length();
     int dataLength = host.length() + path.length() + bodyLength +

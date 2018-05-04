@@ -3,6 +3,18 @@
 
 #include <Arduino.h>
 
+//AT+GMR
+//AT version:1.2.0.0(Jul  1 2016 20:04:45)
+//SDK version:1.5.4.1(39cb9a32)
+//Ai-Thinker Technology Co. Ltd.
+//Dec  2 2016 14:21:16
+//OK
+
+//2nd boot version : 1.5
+//  SPI Speed      : 40MHz
+//  SPI Mode       : DIO
+//  SPI Flash Size & Map: 8Mbit(512KB+512KB)
+
 #define WIFI_MODE_STATION 0x01
 #define WIFI_MODE_AP 0x02
 #define WIFI_MODE_BOTH 0x03
