@@ -13,6 +13,8 @@
 #define HTTP_GET_LENGTH (44)
 #define HTTP_POST_LENGTH (97)
 
+#define DEFAULT_TIMEOUT (4000) // ms
+
 class Wifi {
   public:
     Wifi(Stream *s = &Serial, Stream *d = NULL, int8_t r = -1);
@@ -21,19 +23,21 @@ class Wifi {
     boolean test();
     boolean hardReset();
     boolean softReset();
-    boolean find(String *str = NULL);
+    boolean find(String *str = NULL, int timeout = DEFAULT_TIMEOUT);
 
     // AP
     boolean connectToAP(String ssid, String pass);
-    void closeAP();
+    boolean closeAP();
 
     // TCP
     boolean connectTCP(String host, int port);
-    void closeTCP();
+    boolean closeTCP();
 
     // HTTP
-    boolean getRequest(String host, String path, int port = 80);
-    boolean postRequest(String host, String path, String body, int port = 80);
+    boolean getRequest(String host, String path, int port = 80,
+                       int timeout = DEFAULT_TIMEOUT);
+    boolean postRequest(String host, String path, String body, int port = 80,
+                        int timeout = DEFAULT_TIMEOUT);
 
     String readLine();
 
@@ -41,7 +45,7 @@ class Wifi {
     void clearBuffer();
     void flush();
 
-    void setMode(uint8_t mode);
+    boolean setMode(uint8_t mode);
     void writeData(String str);
 
     Stream *stream; // -> ESP8266, e.g. SoftwareSerial or Serial1

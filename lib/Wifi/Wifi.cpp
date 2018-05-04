@@ -2,8 +2,7 @@
 
 // Constructor
 Wifi::Wifi(Stream *s, Stream *d, int8_t r)
-    : stream(s), debug(d), pinReset(r),
-      bootMarker("ready\r\n"){};
+    : stream(s), debug(d), pinReset(r), bootMarker("ready\r\n"){};
 
 boolean Wifi::begin() { return test(); }
 
@@ -32,7 +31,7 @@ boolean Wifi::softReset() {
 boolean Wifi::connectToAP(String ssid, String pass) {
     setMode(WIFI_MODE_STATION);
     writeData("AT+CWJAP=\"" + ssid + "\",\"" + pass + "\"");
-    return find(NULL);
+    return find(NULL, -1);
 }
 
 boolean Wifi::connectTCP(String host, int port) {
@@ -41,7 +40,7 @@ boolean Wifi::connectTCP(String host, int port) {
     return find();
 }
 
-boolean Wifi::getRequest(String host, String path, int port) {
+boolean Wifi::getRequest(String host, String path, int port, int timeout) {
     connectTCP(host, port);
 
     int dataLength = host.length() + path.length() + HTTP_GET_LENGTH;
@@ -55,12 +54,13 @@ boolean Wifi::getRequest(String host, String path, int port) {
         writeData(request);
 
         String sendOk = "SEND OK\r\n";
-        return find(&sendOk);
+        return find(&sendOk, timeout);
     }
     return false;
 }
 
-boolean Wifi::postRequest(String host, String path, String body, int port) {
+boolean Wifi::postRequest(String host, String path, String body, int port,
+                          int timeout) {
     clearBuffer();
     flush();
 
@@ -83,25 +83,25 @@ boolean Wifi::postRequest(String host, String path, String body, int port) {
         writeData(request);
 
         String sendOk = "SEND OK\r\n";
-        return find(&sendOk);
+        return find(&sendOk, timeout);
     }
     return false;
 }
 
-void Wifi::closeAP() {
+boolean Wifi::closeAP() {
     flush();
-    find();
+    return find();
 }
 
-void Wifi::closeTCP() {
+boolean Wifi::closeTCP() {
     stream->println("AT+CIPCLOSE");
-    find();
+    return find();
 }
 
-void Wifi::setMode(uint8_t mode) {
+boolean Wifi::setMode(uint8_t mode) {
     clearBuffer();
     writeData("AT+CWMODE=" + String(mode));
-    find();
+    return find();
 }
 
 void Wifi::writeData(String str) {
@@ -132,7 +132,7 @@ String Wifi::readLine() {
 
 // Blocks until String `str` is read through the `stream`
 // TODO: Add timeout option
-boolean Wifi::find(String *str) {
+boolean Wifi::find(String *str, int timeout) {
     String s;
     if (str == NULL) {
         s = "OK\r\n";
@@ -141,6 +141,8 @@ boolean Wifi::find(String *str) {
 
     uint8_t stringLength = str->length();
     uint8_t matchedLength = 0;
+
+    unsigned long start_time = millis();
 
     while (matchedLength != stringLength) {
         if (stream->available()) {
@@ -155,13 +157,23 @@ boolean Wifi::find(String *str) {
                 matchedLength = 0;
             }
         }
+
+        // Check timeout
+        if (timeout != -1 && millis() - start_time > timeout) {
+            break;
+        }
     }
 
-    if (debug) {
+    boolean found = matchedLength == stringLength;
+    if (debug && found) {
         debug->println("<-- " + *str);
     }
 
-    return true;
+    if (!found) {
+        debug->println("--- timeout");
+    }
+
+    return found;
 }
 
 void Wifi::clearBuffer() {
