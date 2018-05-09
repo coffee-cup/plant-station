@@ -5,26 +5,36 @@
 // #include <LiquidCrystal.h>
 #include <SoftwareSerial.h>
 
-#define MOISTURE_WATER (160)
-#define MOISTURE_AIR (697)
+#define MOISTURE_WATER (380)
+#define MOISTURE_AIR (1023)
 
 #define WIFI_SSID ("Corner G & The Rub")
 #define WIFI_PASSWORD ("sexyfishtalk")
 
-#define PLANTS_HOST ("192.168.0.14")
-#define PLANTS_PORT (4000)
+// Dev
+// #define PLANTS_HOST ("192.168.0.14")
+// #define PLANTS_PORT (4000)
+
+// Prod
+#define PLANTS_HOST ("hubert.jakerunzer.com")
+#define PLANTS_PORT (80)
+
 #define PLANTS_PATH ("/sensor/plants")
 
 #define MOISTURE_PIN (A0)
 #define LIGHT_PIN (A1)
 #define TEMP_PIN (A2)
 
+#define GREEN_PIN (5)
+#define RED_PIN (6)
+#define WIFI_RESET_PIN (7)
+
 #define ALPHA (0.25) // < 0.5 weights previous values heavier
 #define MOVING_AVERAGE(new_value, old_value)                                   \
     ((new_value * ALPHA) + (old_value * (1 - ALPHA)))
 
 SoftwareSerial ESPserial(2, 3); // RX | TX
-Wifi wifi(&ESPserial, &Serial, -1);
+Wifi wifi(&ESPserial, &Serial, WIFI_RESET_PIN);
 
 extern HardwareSerial Serial;
 
@@ -92,8 +102,29 @@ String createJson() {
     return data;
 }
 
+void abort() {
+    digitalWrite(GREEN_PIN, LOW);
+    for (;;) {
+        digitalWrite(RED_PIN, HIGH);
+        delay(250);
+        digitalWrite(RED_PIN, LOW);
+        delay(250);
+    }
+}
+
+long long data_counter = 0;
 void sendData() {
-    wifi.postRequest(PLANTS_HOST, PLANTS_PATH, createJson(), PLANTS_PORT, 5000);
+    data_counter += 1;
+    if (data_counter % 12 != 0) {
+        return;
+    }
+    if (wifi.postRequest(PLANTS_HOST, PLANTS_PATH, createJson(), PLANTS_PORT, 5000)) {
+        digitalWrite(RED_PIN, LOW);
+        digitalWrite(GREEN_PIN, HIGH);
+    } else {
+        digitalWrite(RED_PIN, HIGH);
+        digitalWrite(GREEN_PIN, LOW);
+    }
 }
 
 void idle(uint32_t idle_period) { delay(idle_period); }
@@ -106,8 +137,14 @@ void setup() {
     // lcd.clear();
     // lcd.print("it is time.");
 
+    pinMode(GREEN_PIN, OUTPUT);
+    pinMode(RED_PIN, OUTPUT);
+
     Serial.begin(19200);
     ESPserial.begin(115200);
+
+    digitalWrite(GREEN_PIN, HIGH);
+    digitalWrite(RED_PIN, HIGH);
 
     // Force baud rate to 9600 because that is all software serial can handle
     ESPserial.println("AT+UART=9600,8,1,0,0");
@@ -115,9 +152,13 @@ void setup() {
     ESPserial.end();
     ESPserial.begin(9600);
 
-    wifi.begin();
+    if (!wifi.begin()) {
+        abort();
+    }
     delay(10);
-    wifi.connectToAP(WIFI_SSID, WIFI_PASSWORD);
+    if (!wifi.connectToAP(WIFI_SSID, WIFI_PASSWORD)) {
+        abort();
+    }
 
     // Scheduler setup
     SchedulerInit();
@@ -126,6 +167,9 @@ void setup() {
     SchedulerStartTask(LIGHT_DELAY, LIGHT_PERIOD, updateLight);
     SchedulerStartTask(TEMP_DELAY, TEMP_PERIOD, updateTemp);
     SchedulerStartTask(DATA_DELAY, DATA_PERIOD, sendData);
+
+    digitalWrite(GREEN_PIN, LOW);
+    digitalWrite(RED_PIN, LOW);
 }
 
 void loop() {
