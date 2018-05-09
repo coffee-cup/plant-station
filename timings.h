@@ -14,6 +14,6 @@
 #define TEMP_PERIOD 50
 
 #define DATA_DELAY 2000
-#define DATA_PERIOD 5000
+#define DATA_PERIOD 20000
 
 #endif
